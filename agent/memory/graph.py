@@ -233,6 +233,7 @@ class SemanticGraph:
         if not self._g.has_node(node_id):
             return None
         data = dict(self._g.nodes[node_id])
+        data["id"] = node_id  # Re-inject the ID stripped by networkx load
         return GraphNode(**data)
 
     def remove_node(self, node_id: str) -> bool:
@@ -245,10 +246,12 @@ class SemanticGraph:
 
     def all_nodes(self, node_type: NodeType | None = None) -> list[GraphNode]:
         """Return all nodes, optionally filtered by type."""
-        nodes = []
+        nodes =[]
         for node_id, data in self._g.nodes(data=True):
             try:
-                node = GraphNode(**data)
+                d = dict(data)
+                d["id"] = node_id  # Re-inject ID
+                node = GraphNode(**d)
                 if node_type is None or node.node_type == node_type:
                     nodes.append(node)
             except Exception as exc:
@@ -330,15 +333,21 @@ class SemanticGraph:
         for _ in range(depth):
             next_frontier: set[str] = set()
             for current in frontier:
-                for successor in self._g.successors(current):
-                    if successor in visited:
+                # Traverse undirected to pull in maximum semantic context
+                connected = set(self._g.successors(current)) | set(self._g.predecessors(current))
+                
+                for nxt in connected:
+                    if nxt in visited:
                         continue
                     if relation is not None:
-                        edge_data = self._g.edges[current, successor]
-                        if edge_data.get("relation") != relation:
+                        # Check edge relation in either direction
+                        fwd = self._g.get_edge_data(current, nxt, default={})
+                        rev = self._g.get_edge_data(nxt, current, default={})
+                        if fwd.get("relation") != relation and rev.get("relation") != relation:
                             continue
-                    next_frontier.add(successor)
-                    visited.add(successor)
+                            
+                    next_frontier.add(nxt)
+                    visited.add(nxt)
             frontier = next_frontier
 
         result = []
@@ -410,12 +419,13 @@ class SemanticGraph:
         """
         Return (position, node_id, embed_text) for all nodes.
         Used by the FAISS index rebuilder.
-        Position is the row index in the FAISS matrix.
         """
-        result = []
+        result =[]
         for position, (node_id, data) in enumerate(self._g.nodes(data=True)):
             try:
-                node = GraphNode(**data)
+                d = dict(data)
+                d["id"] = node_id  # Re-inject ID
+                node = GraphNode(**d)
                 result.append((position, node_id, node.to_embed_text()))
             except Exception:
                 continue
