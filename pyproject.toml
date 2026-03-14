@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent"
+version = "0.1.0"
+description = "Autonomous personal agent — developer / 3D designer"
+requires-python = ">=3.12"
+dependencies =[
+    "pydantic",
+    "pydantic-settings",
+    "httpx",
+    "apscheduler",
+    "watchdog",
+    "typer",
+    "prompt-toolkit",
+    "rich",
+    "structlog",
+    "faiss-cpu",
+    "sentence-transformers",
+    "networkx",
+]
+
+[project.optional-dependencies]
+dev =[
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "mypy",
+    "ruff",
+]
+
+[project.scripts]
+agent = "agent.interface.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agent*"]
+
+# ── Dependency Groups (Modern uv / PEP 735) ──────────────────────────────────
+[dependency-groups]
+dev =[
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "mypy",
+    "ruff",
+]
+
+# ── Ruff ─────────────────────────────────────────────────────────────────────
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select =["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+# ── Mypy ─────────────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+
+# ── Pytest ───────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
