@@ -31,6 +31,13 @@ dev =[
     "ruff",
 ]
 
+# Install for Blender MCP integration (interactive session work via Claude Desktop)
+# The blender_server.py socket bridge handles autonomous background jobs without this.
+blender = [
+
+    "blender-mcp",
+]
+
 [project.scripts]
 agent = "agent.interface.cli:app"
 
@@ -48,6 +55,9 @@ dev =[
     "ruff",
 ]
 
+
+ 
+ 
 # ── Ruff ─────────────────────────────────────────────────────────────────────
 [tool.ruff]
 target-version = "py312"
