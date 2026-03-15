@@ -49,24 +49,23 @@ def make_skill(
 # ── memory show ───────────────────────────────────────────────────────────────
 
 def test_memory_show_no_events() -> None:
-    with patch("agent.interface.cli.memory_show.__wrapped__", side_effect=None), \
-         patch("agent.memory.episodic.list_events", return_value=[]):
+    with patch("agent.interface.cli.list_events", return_value=[]):
         result = runner.invoke(app, ["memory", "show"])
     assert result.exit_code == 0
 
 
 def test_memory_show_with_events() -> None:
-    events = [make_event(f"event {i}") for i in range(3)]
-    with patch("agent.memory.episodic.list_events", return_value=events):
-        result = runner.invoke(app, ["memory", "show"])
+    events =[make_event(f"event {i}") for i in range(3)]
+    with patch("agent.interface.cli.list_events", return_value=events):
+        result = runner.invoke(app,["memory", "show"])
     assert result.exit_code == 0
     assert "code.write" in result.output
 
 
 def test_memory_show_project_filter() -> None:
-    events = [make_event("agrivision event", project="agrivision")]
-    with patch("agent.memory.episodic.list_events", return_value=events) as mock_list:
-        result = runner.invoke(app, ["memory", "show", "--project", "agrivision"])
+    events =[make_event("agrivision event", project="agrivision")]
+    with patch("agent.interface.cli.list_events", return_value=events) as mock_list:
+        result = runner.invoke(app,["memory", "show", "--project", "agrivision"])
     assert result.exit_code == 0
     mock_list.assert_called_once()
     _, kwargs = mock_list.call_args
@@ -74,7 +73,7 @@ def test_memory_show_project_filter() -> None:
 
 
 def test_memory_show_limit_flag() -> None:
-    with patch("agent.memory.episodic.list_events", return_value=[]) as mock_list:
+    with patch("agent.interface.cli.list_events", return_value=[]) as mock_list:
         runner.invoke(app, ["memory", "show", "--limit", "5"])
     _, kwargs = mock_list.call_args
     assert kwargs.get("limit") == 5
@@ -87,15 +86,15 @@ def test_memory_show_invalid_event_type() -> None:
 
 
 def test_memory_show_valid_event_type() -> None:
-    with patch("agent.memory.episodic.list_events", return_value=[]):
-        result = runner.invoke(app, ["memory", "show", "--type", "code.write"])
+    with patch("agent.interface.cli.list_events", return_value=[]):
+        result = runner.invoke(app,["memory", "show", "--type", "code.write"])
     assert result.exit_code == 0
 
 
 # ── memory search ─────────────────────────────────────────────────────────────
 
 def test_memory_search_no_results() -> None:
-    with patch("agent.memory.search.search_and_load", new=AsyncMock(return_value=[])):
+    with patch("agent.interface.cli.search_and_load", new=AsyncMock(return_value=[])):
         result = runner.invoke(app, ["memory", "search", "nonexistent"])
     assert result.exit_code == 0
     assert "No matching" in result.output
@@ -103,33 +102,33 @@ def test_memory_search_no_results() -> None:
 
 def test_memory_search_with_results() -> None:
     events = [make_event("Found FastAPI result")]
-    with patch("agent.memory.search.search_and_load", new=AsyncMock(return_value=events)):
+    with patch("agent.interface.cli.search_and_load", new=AsyncMock(return_value=events)):
         result = runner.invoke(app, ["memory", "search", "FastAPI"])
     assert result.exit_code == 0
     assert "FastAPI" in result.output
 
 
 def test_memory_search_shows_query() -> None:
-    with patch("agent.memory.search.search_and_load", new=AsyncMock(return_value=[])):
-        result = runner.invoke(app, ["memory", "search", "my query"])
+    with patch("agent.interface.cli.search_and_load", new=AsyncMock(return_value=[])):
+        result = runner.invoke(app,["memory", "search", "my query"])
     assert "my query" in result.output
 
 
 # ── memory skills ─────────────────────────────────────────────────────────────
 
 def test_memory_skills_no_records() -> None:
-    with patch("agent.memory.skills.list_skills", return_value=[]):
-        result = runner.invoke(app, ["memory", "skills"])
+    with patch("agent.interface.cli.list_skills", return_value=[]):
+        result = runner.invoke(app,["memory", "skills"])
     assert result.exit_code == 0
     assert "No skill" in result.output
 
 
 def test_memory_skills_shows_records() -> None:
-    skills = [
+    skills =[
         make_skill("create_api", "use FastAPI", 0.9),
         make_skill("export_3d",  "GLB format",  0.6),
     ]
-    with patch("agent.memory.skills.list_skills", return_value=skills):
+    with patch("agent.interface.cli.list_skills", return_value=skills):
         result = runner.invoke(app, ["memory", "skills"])
     assert result.exit_code == 0
     assert "create_api" in result.output
@@ -137,8 +136,8 @@ def test_memory_skills_shows_records() -> None:
 
 
 def test_memory_skills_min_confidence_passed() -> None:
-    with patch("agent.memory.skills.list_skills", return_value=[]) as mock_list:
-        runner.invoke(app, ["memory", "skills", "--min", "0.7"])
+    with patch("agent.interface.cli.list_skills", return_value=[]) as mock_list:
+        runner.invoke(app,["memory", "skills", "--min", "0.7"])
     mock_list.assert_called_once_with(min_confidence=0.7)
 
 
@@ -147,7 +146,7 @@ def test_memory_skills_min_confidence_passed() -> None:
 def test_memory_delete_not_found(tmp_path: Path) -> None:
     with patch("agent.interface.cli.cfg") as mock_cfg:
         mock_cfg.episodic_dir = tmp_path
-        result = runner.invoke(app, ["memory", "delete", "evt-nonexistent", "--yes"])
+        result = runner.invoke(app,["memory", "delete", "evt-nonexistent", "--yes"])
     assert result.exit_code != 0
     assert "not found" in result.output.lower()
 
@@ -159,7 +158,7 @@ def test_memory_delete_found_and_confirmed(tmp_path: Path) -> None:
 
     with patch("agent.interface.cli.cfg") as mock_cfg:
         mock_cfg.episodic_dir = tmp_path
-        result = runner.invoke(app, ["memory", "delete", event_id, "--yes"])
+        result = runner.invoke(app,["memory", "delete", event_id, "--yes"])
 
     assert result.exit_code == 0
     assert not event_file.exists()
@@ -174,7 +173,7 @@ def test_memory_delete_cancelled_without_yes_flag(tmp_path: Path) -> None:
     with patch("agent.interface.cli.cfg") as mock_cfg:
         mock_cfg.episodic_dir = tmp_path
         # Simulate user typing 'n' at confirmation prompt
-        result = runner.invoke(app, ["memory", "delete", event_id], input="n\n")
+        result = runner.invoke(app,["memory", "delete", event_id], input="n\n")
 
     assert event_file.exists()  # not deleted
     assert "Cancelled" in result.output
@@ -190,10 +189,13 @@ def test_status_no_active_session() -> None:
     mock_mgr.load.return_value = None
 
     with patch("agent.interface.cli.SessionManager", return_value=mock_mgr), \
-         patch("agent.memory.skills.list_skills", return_value=[]), \
-         patch("agent.memory.episodic.list_events", return_value=[]), \
+         patch("agent.interface.cli.list_skills", return_value=[]), \
+         patch("agent.interface.cli.list_events", return_value=[]), \
          patch("agent.interface.cli.load_consolidation_state",
-               return_value=ConsolidationState()):
+               return_value=ConsolidationState()), \
+         patch("agent.interface.cli.cfg") as mock_cfg:
+        mock_cfg.graph_path = Path("/dev/null/g.json")
+        mock_cfg.faiss_index_path = Path("/dev/null/i.faiss")
         result = runner.invoke(app, ["status"])
 
     assert result.exit_code == 0
@@ -211,8 +213,8 @@ def test_status_with_active_session() -> None:
     mock_mgr.load.return_value = state
 
     with patch("agent.interface.cli.SessionManager", return_value=mock_mgr), \
-         patch("agent.memory.skills.list_skills", return_value=[make_skill()]), \
-         patch("agent.memory.episodic.list_events", return_value=[make_event()]), \
+         patch("agent.interface.cli.list_skills", return_value=[make_skill()]), \
+         patch("agent.interface.cli.list_events", return_value=[make_event()]), \
          patch("agent.interface.cli.load_consolidation_state",
                return_value=ConsolidationState(total_runs=3, total_patterns_extracted=12)), \
          patch("agent.interface.cli.cfg") as mock_cfg:
@@ -233,12 +235,12 @@ def test_status_shows_memory_counts() -> None:
     mock_mgr = MagicMock(spec=SessionManager)
     mock_mgr.load.return_value = None
 
-    events = [make_event() for _ in range(5)]
-    skills = [make_skill(f"task_{i}") for i in range(3)]
+    event_list = [make_event() for _ in range(5)]
+    skill_list = [make_skill(f"task_{i}") for i in range(3)]
 
     with patch("agent.interface.cli.SessionManager", return_value=mock_mgr), \
-         patch("agent.memory.skills.list_skills", return_value=skills), \
-         patch("agent.memory.episodic.list_events", return_value=events), \
+         patch("agent.interface.cli.list_skills", return_value=skill_list), \
+         patch("agent.interface.cli.list_events", return_value=event_list), \
          patch("agent.interface.cli.load_consolidation_state",
                return_value=ConsolidationState()), \
          patch("agent.interface.cli.cfg") as mock_cfg:
@@ -259,8 +261,8 @@ def test_status_consolidation_never_run() -> None:
     mock_mgr.load.return_value = None
 
     with patch("agent.interface.cli.SessionManager", return_value=mock_mgr), \
-         patch("agent.memory.skills.list_skills", return_value=[]), \
-         patch("agent.memory.episodic.list_events", return_value=[]), \
+         patch("agent.interface.cli.list_skills", return_value=[]), \
+         patch("agent.interface.cli.list_events", return_value=[]), \
          patch("agent.interface.cli.load_consolidation_state",
                return_value=ConsolidationState()), \
          patch("agent.interface.cli.cfg") as mock_cfg:

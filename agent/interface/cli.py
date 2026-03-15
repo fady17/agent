@@ -24,6 +24,8 @@ from __future__ import annotations
 
 import asyncio
 import signal
+import sys
+from pathlib import Path
 from typing import Optional
 
 import typer
@@ -31,20 +33,15 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
+from rich import print as rprint
 
-from agent.background.consolidation import _load_state as load_consolidation_state
-from agent.background.monitor import drain_pending_actions
-from agent.background.scheduler import build_default_scheduler
+# Module-level imports so tests can patch these names on agent.interface.cli
 from agent.core.config import cfg
-from agent.core.orchestrator import Orchestrator
 from agent.core.session import SessionManager
-from agent.llm.lm_studio import Message
-from agent.memory.embedder import get_embedder
+from agent.background.consolidation import _load_state as load_consolidation_state
 from agent.memory.episodic import EventType, list_events
-from agent.memory.graph import SemanticGraph
-from agent.memory.index import FaissIndex
-from agent.memory.search import search_and_load
 from agent.memory.skills import list_skills
+from agent.memory.search import search_and_load 
 
 app     = typer.Typer(help="Autonomous personal agent — developer / 3D designer edition")
 memory  = typer.Typer(help="Inspect and manage agent memory")
@@ -78,7 +75,12 @@ async def _chat_session(
     force_cloud: bool,
     force_local: bool,
 ) -> None:
-
+    from agent.background.scheduler import build_default_scheduler
+    from agent.core.orchestrator import Orchestrator
+    from agent.memory.embedder import get_embedder
+    from agent.memory.graph import SemanticGraph
+    from agent.memory.index import FaissIndex
+    from agent.core.config import cfg
 
     console.print(Panel(
         "[bold]Autonomous Personal Agent[/bold]\n"
@@ -134,7 +136,7 @@ async def _chat_session(
     try:
         while not shutdown_requested:
             # Check for proactive actions
-            
+            from agent.background.monitor import drain_pending_actions
             pending = drain_pending_actions()
             for action in sorted(pending, key=lambda a: a.priority):
                 console.print(
@@ -195,7 +197,7 @@ async def _chat_session(
                     console.print(f"[dim red]Error: {result.error}[/dim red]")
 
             # Append to conversation history for multi-turn context
-            
+            from agent.llm.lm_studio import Message
             conversation_history.append(Message(role="user",      content=user_input))
             conversation_history.append(Message(role="assistant", content=response_text))
 
@@ -249,7 +251,6 @@ def memory_show(
         help="Filter by event type (e.g. code.write, llm.call)"),
 ) -> None:
     """List recent episodic events."""
-    
     etype = None
     if event_type:
         try:
@@ -295,7 +296,6 @@ def memory_search(
 
 async def _memory_search(*, query: str, project: str | None, limit: int) -> None:
     
-
     console.print(f"[dim]Searching for:[/dim] {query!r}")
     events = await search_and_load(query, project=project, max_results=limit)
 
@@ -328,7 +328,6 @@ def memory_skills(
         help="Minimum confidence threshold (0.0 - 1.0)"),
 ) -> None:
     """List skill records ordered by confidence."""
-    
     skills = list_skills(min_confidence=min_confidence)
 
     if not skills:
@@ -365,8 +364,6 @@ def memory_delete(
     yes:      bool = typer.Option(False, "--yes", "-y", help="Skip confirmation"),
 ) -> None:
     """Delete a specific episodic event by ID."""
-    
-
     # Find the event file
     matches = list(cfg.episodic_dir.rglob(f"{event_id}.json"))
     if not matches:
@@ -390,8 +387,6 @@ def memory_delete(
 @app.command()
 def status() -> None:
     """Show agent status — session, scheduler, memory, consolidation."""
-
-
     console.print(Panel("[bold]Agent Status[/bold]", border_style="blue"))
 
     # Session
