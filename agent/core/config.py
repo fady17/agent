@@ -57,6 +57,11 @@ class AgentConfig(BaseSettings):
     # ── Observability ────────────────────────────────────────────────────────
     log_level: str = "INFO"
 
+    # ── UI / Palette ─────────────────────────────────────────────────────────
+    palette_window_width: int = 640
+    palette_window_height: int = 72
+    palette_max_height: int = 600
+
     # ── Validators ───────────────────────────────────────────────────────────
 
     @field_validator("agent_memory_root", mode="before")
@@ -126,6 +131,13 @@ class AgentConfig(BaseSettings):
     @property
     def faiss_index_path(self) -> Path:
         return self.semantic_dir / "index.faiss"
+    
+    # ── Derived paths (computed, not configurable) ───────────────────────────
+
+    @property
+    def palette_socket(self) -> Path:
+        return self.agent_memory_root / "palette.sock"
+
 
 
 @lru_cache(maxsize=1)
