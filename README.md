@@ -40,7 +40,7 @@ Blender, writes and tests code, and gets smarter every night.
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/yourname/agent.git
+git clone https://github.com/fady17/agent.git
 cd agent
 uv sync --all-extras
 
