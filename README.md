@@ -271,15 +271,6 @@ uv run ruff format agent/ scripts/
 ```
 
 
-```bash
-# macOS
-brew install ripgrep
-brew install koekeishiya/formulae/skhd
-cp config/skhdrc ~/.skhdrc
-skhd --start-service
-
-```
-
 
 
 ```bash
